@@ -41,11 +41,8 @@ export function Presentation({ photos, isOpen, onClose }: PresentationProps) {
 
     console.log(audio)
     if (isPlaying) {
-        console.log("PLAYED")
       slideInterval = window.setInterval(goToNext, 3000);
-      audio.play().then(()=>{
-        console.log("PLAYED BROO")
-      }).catch(error => {
+      audio.play().catch(error => {
         console.error('Error playing audio:', error);
         setAudioError(true);
       });
