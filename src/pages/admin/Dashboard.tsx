@@ -228,7 +228,7 @@ export function AdminDashboard() {
           {photos.map(photo => (
             <div key={photo.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <img
-                src={`https://res.cloudinary.com/demo/image/upload/${photo.path}`}
+                src={`${photo.path}`}
                 alt={photo.title}
                 className="w-full h-48 object-cover"
               />

@@ -53,12 +53,16 @@ export function PhotoForm({ onSuccess }: PhotoFormProps) {
   });
 
   async function uploadToCloudinary(file: File): Promise<string> {
+    const timestamp = Math.round((new Date()).getTime() / 1000);
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'your_upload_preset'); // Replace with your Cloudinary upload preset
+    formData.append("upload_preset", "love-story")
+    formData.append("folder", "love-story")
+    formData.append("api_key", import.meta.env.VITE_CLOUDINARY_API_KEY)
+    formData.append("timestamp", timestamp.toString())
 
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/your_cloud_name/image/upload`, // Replace with your cloud name
+      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
       {
         method: 'POST',
         body: formData
@@ -66,11 +70,12 @@ export function PhotoForm({ onSuccess }: PhotoFormProps) {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to upload image');
+      const errorData = await response.json();
+      throw new Error(`Failed to upload image: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    return data.public_id;
+    return data.secure_url;
   }
 
   async function onSubmit(data: FormData) {

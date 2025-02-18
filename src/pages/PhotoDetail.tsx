@@ -72,7 +72,7 @@ export function PhotoDetail() {
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <img
-          src={`https://res.cloudinary.com/demo/image/upload/${photo.path}`}
+          src={`${photo.path}`}
           alt={photo.title}
           className="w-full h-[60vh] object-cover"
         />

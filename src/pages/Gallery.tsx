@@ -112,7 +112,7 @@ export function Gallery() {
             className="group relative overflow-hidden rounded-lg shadow-lg aspect-[4/3]"
           >
             <img
-              src={`https://res.cloudinary.com/demo/image/upload/${photo.path}`}
+              src={`${photo.path}`}
               alt={photo.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
             />
