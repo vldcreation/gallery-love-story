@@ -17,6 +17,8 @@ export function AdminDashboard() {
   const [showTagForm, setShowTagForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  // Add this to your existing state declarations
+  const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -222,8 +224,14 @@ export function AdminDashboard() {
       {/* Photos Section */}
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">Manage Photos</h2>
-        <PhotoForm onSuccess={fetchData} />
-
+        <PhotoForm 
+          photo={editingPhoto} 
+          onSuccess={() => {
+            fetchData();
+            setEditingPhoto(null);
+          }} 
+        />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {photos.map(photo => (
             <div key={photo.id} className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -238,6 +246,12 @@ export function AdminDashboard() {
                   <p className="text-gray-600 text-sm mb-4">{photo.description}</p>
                 )}
                 <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={() => setEditingPhoto(photo)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={async () => {
                       if (window.confirm('Are you sure you want to delete this photo?')) {

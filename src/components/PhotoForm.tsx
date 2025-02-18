@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useCallback, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import type { Tag, Category } from '../types';
+import type { Tag, Category, Photo } from '../types';
+import Select from 'react-select';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -17,23 +18,103 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface PhotoFormProps {
+  photo?: Photo | null;
   onSuccess: () => void;
 }
 
-export function PhotoForm({ onSuccess }: PhotoFormProps) {
+export function PhotoForm({ photo, onSuccess }: PhotoFormProps) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      tags: [],
-      categories: []
+      title: photo?.title || '',
+      description: photo?.description || '',
+      tags: photo?.tags || [],
+      categories: photo?.categories || []
     }
   });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [tagsRes, categoriesRes] = await Promise.all([
+          supabase.from('tags').select('*').order('name'),
+          supabase.from('categories').select('*').order('name')
+        ]);
+
+        if (tagsRes.error) throw tagsRes.error;
+        if (categoriesRes.error) throw categoriesRes.error;
+
+        setTags(tagsRes.data);
+        setCategories(categoriesRes.data);
+      } catch (error) {
+        console.error('Error fetching tags and categories:', error);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (photo) {
+      setValue('title', photo.title);
+      setValue('description', photo.description || '');
+      setValue('tags', photo.tags || []);
+      setValue('categories', photo.categories || []);
+      setPreviewUrl(photo.path);
+    }
+  }, [photo, setValue]);
+
+  async function onSubmit(data: FormData) {
+    setLoading(true);
+    try {
+      let imagePath = photo?.path;
+
+      if (uploadedImage) {
+        imagePath = await uploadToCloudinary(uploadedImage);
+      }
+
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) throw new Error('User not authenticated');
+
+      if (photo) {
+        // Update existing photo
+        const { error } = await supabase
+          .from('photos')
+          .update({
+            ...data,
+            path: imagePath,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', photo.id);
+
+        if (error) throw error;
+      } else {
+        // Create new photo
+        const { error } = await supabase.from('photos').insert([{
+          ...data,
+          path: imagePath,
+          user_id: userId
+        }]);
+
+        if (error) throw error;
+      }
+
+      reset();
+      setUploadedImage(null);
+      setPreviewUrl(null);
+      onSuccess();
+    } catch (error) {
+      console.error('Error saving photo:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -76,38 +157,6 @@ export function PhotoForm({ onSuccess }: PhotoFormProps) {
 
     const data = await response.json();
     return data.secure_url;
-  }
-
-  async function onSubmit(data: FormData) {
-    if (!uploadedImage) {
-      alert('Please upload an image');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const imagePath = await uploadToCloudinary(uploadedImage);
-      const userId = (await supabase.auth.getUser()).data.user?.id;
-      
-      if (!userId) throw new Error('User not authenticated');
-
-      const { error } = await supabase.from('photos').insert([{
-        ...data,
-        path: imagePath,
-        user_id: userId
-      }]);
-
-      if (error) throw error;
-
-      reset();
-      setUploadedImage(null);
-      setPreviewUrl(null);
-      onSuccess();
-    } catch (error) {
-      console.error('Error creating photo:', error);
-    } finally {
-      setLoading(false);
-    }
   }
 
   return (
@@ -183,46 +232,62 @@ export function PhotoForm({ onSuccess }: PhotoFormProps) {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Tags
         </label>
-        <div className="space-y-2">
-          {tags.map(tag => (
-            <label key={tag.id} className="inline-flex items-center mr-4">
-              <input
-                type="checkbox"
-                value={tag.id}
-                {...register('tags')}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-              <span className="ml-2">{tag.name}</span>
-            </label>
-          ))}
-        </div>
+        <Controller
+          name="tags"
+          control={control}
+          render={({ field }) => (
+            <Select
+              {...field}
+              isMulti
+              value={tags
+                .filter(tag => field.value?.includes(tag.id))
+                .map(tag => ({ value: tag.id, label: tag.name }))
+              }
+              options={tags.map(tag => ({ value: tag.id, label: tag.name }))}
+              onChange={(newValue) => field.onChange(newValue ? newValue.map(item => item.value) : [])}
+              className="mt-1 block w-full"
+              classNamePrefix="select"
+              placeholder="Search and select tags..."
+              isClearable
+              isSearchable
+            />
+          )}
+        />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Categories
         </label>
-        <div className="space-y-2">
-          {categories.map(category => (
-            <label key={category.id} className="inline-flex items-center mr-4">
-              <input
-                type="checkbox"
-                value={category.id}
-                {...register('categories')}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-              <span className="ml-2">{category.name}</span>
-            </label>
-          ))}
-        </div>
+        <Controller
+          name="categories"
+          control={control}
+          render={({ field }) => (
+            <Select
+              {...field}
+              isMulti
+              value={categories
+                .filter(category => field.value?.includes(category.id))
+                .map(category => ({ value: category.id, label: category.name }))
+              }
+              options={categories.map(category => ({ value: category.id, label: category.name }))}
+              onChange={(newValue) => field.onChange(newValue ? newValue.map(item => item.value) : [])}
+              className="mt-1 block w-full"
+              classNamePrefix="select"
+              placeholder="Search and select categories..."
+              isClearable
+              isSearchable
+            />
+          )}
+        />
       </div>
 
       <button
         type="submit"
-        disabled={loading || !uploadedImage}
+        disabled={loading || (!uploadedImage && !photo)}
         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
       >
-        {loading ? 'Creating...' : 'Create Photo'}
+        {loading ? 'Saving...' : photo ? 'Update Photo' : 'Create Photo'}
       </button>
     </form>
   );

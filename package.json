@@ -1,5 +1,9 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "gallery-love-story",
+  "author": {
+    "name": "Vicktor Desrony",
+    "copilot": ["Deepseek R1", "Claude", "GPTo4"]
+  },
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,6 +16,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
     "@supabase/supabase-js": "^2.39.7",
+    "@types/react-select": "^5.0.0",
     "cloudinary": "^2.0.1",
     "date-fns": "^3.3.1",
     "lucide-react": "^0.344.0",
