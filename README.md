@@ -36,11 +36,15 @@ npm install
 
 3. Create a `.env` file in the root directory with the following variables:
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-VITE_CLOUDINARY_API_KEY=your_cloudinary_api_key
+VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_URL=
+
+VITE_CLOUDINARY_CLOUD_NAME=
+VITE_CLOUDINARY_API_KEY=
+VITE_CLOUDINARY_API_SECRET=
+VITE_CLOUDINARY_RESSOURCE_NAME=
 ```
+or just cp the `.env.❤️` file
 
 4. Set up the database:
    - Create a new Supabase project
