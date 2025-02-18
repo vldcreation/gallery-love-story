@@ -12,7 +12,7 @@ export function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <Camera className="w-8 h-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Gallery</span>
+              <span className="text-xl font-bold text-gray-900">Gallery ❤️ </span>
             </Link>
           </div>
           

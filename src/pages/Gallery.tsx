@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import Select from 'react-select';
 import { supabase } from '../lib/supabase';
 import type { Photo, Tag, Category } from '../types';
+
+type Option = {
+  value: string;
+  label: string;
+};
 
 export function Gallery() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -10,6 +16,7 @@ export function Gallery() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,8 +50,20 @@ export function Gallery() {
       selectedTags.every(tagId => photo.tags.includes(tagId));
     const matchesCategories = selectedCategories.length === 0 || 
       selectedCategories.every(catId => photo.categories.includes(catId));
-    return matchesTags && matchesCategories;
+    const matchesSearch = searchQuery === '' ||
+      photo.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTags && matchesCategories && matchesSearch;
   });
+
+  const tagOptions: Option[] = tags.map(tag => ({
+    value: tag.id,
+    label: tag.name
+  }));
+
+  const categoryOptions: Option[] = categories.map(category => ({
+    value: category.id,
+    label: category.name
+  }));
 
   if (loading) {
     return (
@@ -56,51 +75,45 @@ export function Gallery() {
 
   return (
     <div className="space-y-8">
+      <div className="w-full max-w-md mb-6">
+        <input
+          type="text"
+          placeholder="Search by title..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+      
       <div className="flex flex-wrap gap-4">
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Tags</h3>
-          <div className="flex flex-wrap gap-2">
-            {tags.map(tag => (
-              <button
-                key={tag.id}
-                onClick={() => setSelectedTags(prev => 
-                  prev.includes(tag.id) 
-                    ? prev.filter(id => id !== tag.id)
-                    : [...prev, tag.id]
-                )}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  selectedTags.includes(tag.id)
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
+        <div className="w-72">
+          <h3 className="text-lg font-semibold mb-2">Tags</h3>
+          <Select
+            isMulti
+            options={tagOptions}
+            value={tagOptions.filter(option => selectedTags.includes(option.value))}
+            onChange={(selected) => {
+              setSelectedTags((selected as Option[] || []).map(option => option.value));
+            }}
+            className="basic-multi-select"
+            classNamePrefix="select"
+            placeholder="Select tags..."
+          />
         </div>
         
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Categories</h3>
-          <div className="flex flex-wrap gap-2">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategories(prev =>
-                  prev.includes(category.id)
-                    ? prev.filter(id => id !== category.id)
-                    : [...prev, category.id]
-                )}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  selectedCategories.includes(category.id)
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
+        <div className="w-72">
+          <h3 className="text-lg font-semibold mb-2">Categories</h3>
+          <Select
+            isMulti
+            options={categoryOptions}
+            value={categoryOptions.filter(option => selectedCategories.includes(option.value))}
+            onChange={(selected) => {
+              setSelectedCategories((selected as Option[] || []).map(option => option.value));
+            }}
+            className="basic-multi-select"
+            classNamePrefix="select"
+            placeholder="Select categories..."
+          />
         </div>
       </div>
 
