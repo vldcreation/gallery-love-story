@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { Presentation as PresentationIcon } from 'lucide-react';
 import Select from 'react-select';
 import { supabase } from '../lib/supabase';
+import { Presentation } from '../components/Presentation';
 import type { Photo, Tag, Category } from '../types';
 
 type Option = {
@@ -18,6 +20,7 @@ export function Gallery() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showPresentation, setShowPresentation] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -75,14 +78,23 @@ export function Gallery() {
 
   return (
     <div className="space-y-8">
-      <div className="w-full max-w-md mb-6">
-        <input
-          type="text"
-          placeholder="Search by title..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+      <div className="flex justify-between items-center mb-6">
+        <div className="w-full max-w-md">
+          <input
+            type="text"
+            placeholder="Search by title..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <button
+          onClick={() => setShowPresentation(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+        >
+          <PresentationIcon className="w-5 h-5" />
+          <span>Presentation</span>
+        </button>
       </div>
       
       <div className="flex flex-wrap gap-4">
@@ -117,29 +129,35 @@ export function Gallery() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPhotos.map(photo => (
           <Link
             key={photo.id}
             to={`/photo/${photo.id}`}
-            className="group relative overflow-hidden rounded-lg shadow-lg aspect-[4/3]"
+            className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
           >
             <img
-              src={`${photo.path}`}
+              src={photo.path}
               alt={photo.title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              className="w-full h-48 object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <h2 className="text-xl font-bold mb-1">{photo.title}</h2>
-                <p className="text-sm opacity-90">
-                  {format(new Date(photo.created_at), 'MMMM d, yyyy')}
-                </p>
-              </div>
+            <div className="p-4">
+              <h3 className="font-semibold text-lg mb-1">{photo.title}</h3>
+              <p className="text-gray-500 text-sm">
+                {format(new Date(photo.created_at), 'MMMM d, yyyy')}
+              </p>
             </div>
           </Link>
         ))}
       </div>
+
+      {showPresentation && (
+        <Presentation
+          photos={filteredPhotos}
+          isOpen={showPresentation}
+          onClose={() => setShowPresentation(false)}
+        />
+      )}
     </div>
   );
 }
