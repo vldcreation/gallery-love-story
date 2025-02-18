@@ -2,6 +2,17 @@
 
 A modern web application for managing and displaying a beautiful photo gallery with tagging and categorization features.
 
+## Preview
+
+### Gallery Index
+![Gallery Index](preview/gallery-love-index.jpeg)
+
+### Admin Dashboard
+![Admin Dashboard](preview/gallery-love-admin.jpeg)
+
+### Slideshow
+![Slideshow](preview/gallery-love-slideshow.jpeg)
+
 ## Features
 
 - Photo management with title, description, and image upload
